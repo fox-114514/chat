@@ -3,7 +3,7 @@ import multer from 'multer';
 import { pool } from '../db/pool';
 import { requireAuth } from '../auth/middleware';
 import { asyncHandler } from '../utils/asyncHandler';
-import { BadRequest, NotFound, PayloadTooLarge } from '../utils/errors';
+import { BadRequest, Forbidden, NotFound, PayloadTooLarge } from '../utils/errors';
 import { env } from '../config/env';
 import { saveFile, resolveStoragePath } from '../storage/files';
 import { logger } from '../utils/logger';
@@ -95,13 +95,34 @@ router.get(
       storage_path: string;
       mime_type: string | null;
       original_name: string | null;
+      uploader_id: string;
     }>(
-      `SELECT storage_path, mime_type, original_name
+      `SELECT storage_path, mime_type, original_name, uploader_id
        FROM files WHERE id = $1`,
       [fileId],
     );
     const file = result.rows[0];
     if (!file) throw NotFound('file not found', 'FILE_NOT_FOUND');
+
+    const userId = req.user!.userId;
+    let allowed = file.uploader_id === userId;
+    if (!allowed) {
+      const memberCheck = await pool.query<{ exists: boolean }>(
+        `SELECT EXISTS (
+           SELECT 1 FROM messages m
+           JOIN room_members rm ON rm.room_id = m.room_id AND rm.user_id = $1
+           WHERE m.file_id = $2
+         ) AS exists`,
+        [userId, fileId],
+      );
+      allowed = memberCheck.rows[0]?.exists === true;
+    }
+    if (!allowed) {
+      throw Forbidden(
+        'you do not have permission to access this file',
+        'FILE_ACCESS_DENIED',
+      );
+    }
 
     const absolutePath = resolveStoragePath(file.storage_path);
     const mime = file.mime_type || 'application/octet-stream';
