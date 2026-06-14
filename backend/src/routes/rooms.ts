@@ -107,9 +107,9 @@ router.post(
 
       await client.query(
         `INSERT INTO room_members (room_id, user_id, role)
-         SELECT $1, u, 'member'::varchar FROM UNNEST($2::uuid[]) AS u
+         SELECT $1::uuid, u, 'member'::varchar FROM UNNEST($2::uuid[]) AS u
          UNION ALL
-         SELECT $1, $3::uuid, 'admin'::varchar`,
+         SELECT $1::uuid, $3::uuid, 'admin'::varchar`,
         [room.id, memberIds, req.user!.userId],
       );
 
