@@ -60,7 +60,8 @@ export default function ChatWindow() {
         fetchMessages(roomId, { limit: DEFAULT_LIMIT }),
       ]);
       setRoom(roomData);
-      setMessages(roomId, messagesData.messages);
+      // API returns newest-first; store oldest-first so UI renders old->new top->bottom
+      setMessages(roomId, [...messagesData.messages].reverse());
       setHasMore(messagesData.hasMore);
       setCurrentRoomId(roomId);
       await markRoomAsRead(roomId);
@@ -85,7 +86,7 @@ export default function ChatWindow() {
     try {
       const before = roomMessages[0].id;
       const data = await fetchMessages(roomId, { before, limit: DEFAULT_LIMIT });
-      setMessages(roomId, [...data.messages, ...roomMessages]);
+      setMessages(roomId, [...data.messages].reverse().concat(roomMessages));
       setHasMore(data.hasMore);
     } catch (err) {
       setError(getApiErrorMessage(err));
