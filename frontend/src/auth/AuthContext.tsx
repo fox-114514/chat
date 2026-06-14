@@ -1,14 +1,33 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  ReactNode,
+} from 'react';
 import type { User } from '../types/models';
-import { api, clearTokens, getAccessToken, setTokens as persistTokens } from '../api/client';
+import { clearTokens, getAccessToken, setTokens as persistTokens } from '../api/client';
+import { login as apiLogin, register as apiRegister, fetchMe } from '../api/auth';
+
+interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+interface RegisterCredentials {
+  username: string;
+  password: string;
+}
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isLoading: boolean;
-  setUser: (user: User | null) => void;
-  setAuth: (user: User, access: string, refresh: string) => void;
-  clearAuth: () => void;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (credentials: RegisterCredentials) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -26,11 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
-    api
-      .get<{ user: User }>('/auth/me')
-      .then((res) => {
+    fetchMe()
+      .then((u) => {
         if (cancelled) return;
-        setUser(res.data.user);
+        setUser(u);
         setAccessToken(token);
       })
       .catch(() => {
@@ -48,21 +66,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const setAuth = useCallback((u: User, access: string, refresh: string) => {
-    setUser(u);
-    setAccessToken(access);
-    persistTokens(access, refresh);
+  const login = useCallback(async (credentials: LoginCredentials): Promise<void> => {
+    const response = await apiLogin(credentials);
+    setUser(response.user);
+    setAccessToken(response.accessToken);
+    persistTokens(response.accessToken, response.refreshToken);
   }, []);
 
-  const clearAuth = useCallback(() => {
+  const register = useCallback(async (credentials: RegisterCredentials): Promise<void> => {
+    const response = await apiRegister(credentials);
+    setUser(response.user);
+    setAccessToken(response.accessToken);
+    persistTokens(response.accessToken, response.refreshToken);
+  }, []);
+
+  const logout = useCallback((): void => {
     setUser(null);
     setAccessToken(null);
     clearTokens();
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ user, accessToken, isLoading, setUser, setAuth, clearAuth }),
-    [user, accessToken, isLoading, setAuth, clearAuth],
+    () => ({ user, accessToken, isLoading, login, register, logout }),
+    [user, accessToken, isLoading, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

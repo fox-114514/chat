@@ -1,14 +1,45 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { useSocket } from '../hooks/useSocket';
+import { useChatStore } from '../store/chatStore';
+import { fetchRooms } from '../api/rooms';
+import { getApiErrorMessage } from '../api/client';
+import AppLayout from '../components/layout/AppLayout';
+import ChatWindow from '../components/chat/ChatWindow';
+
 export default function ChatPage() {
-  return (
-    <div className="flex h-full items-center justify-center p-4">
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Chat
-        </h1>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Phase 8 will implement the chat UI.
-        </p>
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const { setRooms } = useChatStore();
+
+  useSocket();
+
+  useEffect(() => {
+    if (!user) return;
+    fetchRooms()
+      .then((rooms) => setRooms(rooms))
+      .catch((err) => {
+        console.error('Failed to load rooms:', getApiErrorMessage(err));
+      });
+  }, [user, setRooms]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+        Loading...
       </div>
-    </div>
+    );
+  }
+
+  if (!user) {
+    navigate('/login', { replace: true });
+    return null;
+  }
+
+  return (
+    <AppLayout>
+      <ChatWindow />
+    </AppLayout>
   );
 }

@@ -42,3 +42,9 @@ coverage/
 
 # typescript
 *.tsbuildinfo
+
+# project process documents (not for public repo)
+PLAN.md
+DETAIL_PLAN.md
+PHASE4_DESIGN.md
+REVIEW_PHASE*.md
