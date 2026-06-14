@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from './jwt';
 import { Unauthorized } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
@@ -18,7 +19,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     req.user = { userId: payload.userId, username: payload.username };
     next();
   } catch (err) {
+    logger.debug({ err }, 'token verification failed');
     next(Unauthorized('Invalid or expired token', 'INVALID_TOKEN'));
-    void err;
   }
 }

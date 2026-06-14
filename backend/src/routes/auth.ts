@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { pool } from '../db/pool';
 import { hashPassword, comparePassword } from '../auth/password';
-import { signAccessToken, signRefreshToken } from '../auth/jwt';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../auth/jwt';
 import { requireAuth } from '../auth/middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequest, Unauthorized, Conflict } from '../utils/errors';
@@ -125,6 +125,44 @@ router.get(
       throw Unauthorized('user not found', 'USER_NOT_FOUND');
     }
     res.json({ user: rowToUser(row) });
+  }),
+);
+
+router.post(
+  '/refresh',
+  asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      throw Unauthorized('Missing refresh token', 'NO_REFRESH_TOKEN');
+    }
+    const token = header.slice('Bearer '.length).trim();
+    if (!token) {
+      throw Unauthorized('Empty refresh token', 'NO_REFRESH_TOKEN');
+    }
+
+    let payload;
+    try {
+      payload = verifyRefreshToken(token);
+    } catch {
+      throw Unauthorized('Invalid or expired refresh token', 'INVALID_REFRESH_TOKEN');
+    }
+
+    const result = await pool.query<UserRow>(
+      `SELECT id, username, password_hash, public_key, avatar_color, created_at, last_seen_at
+       FROM users
+       WHERE id = $1`,
+      [payload.userId],
+    );
+    const row = result.rows[0];
+    if (!row) {
+      throw Unauthorized('user not found', 'USER_NOT_FOUND');
+    }
+
+    logger.info({ userId: row.id, username: row.username }, 'token refreshed');
+
+    const user = rowToUser(row);
+    const tokens = issueTokens(user.id, user.username);
+    res.json({ user, ...tokens });
   }),
 );
 
