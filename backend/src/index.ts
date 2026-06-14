@@ -9,6 +9,9 @@ import { AppError, InternalError, NotFound } from './utils/errors';
 import { runMigrations } from './db/migrate';
 import { closePool } from './db/pool';
 import authRouter from './routes/auth';
+import usersRouter from './routes/users';
+import roomsRouter from './routes/rooms';
+import directRouter from './routes/direct';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -26,6 +29,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/rooms', roomsRouter);
+app.use('/api/direct', directRouter);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(NotFound(`Route not found: ${req.method} ${req.path}`, 'NOT_FOUND'));
