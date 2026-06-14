@@ -8,6 +8,7 @@ import { logger } from './utils/logger';
 import { AppError, InternalError, NotFound } from './utils/errors';
 import { runMigrations } from './db/migrate';
 import { closePool } from './db/pool';
+import authRouter from './routes/auth';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -23,6 +24,8 @@ app.use(express.json({ limit: '1mb' }));
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
+
+app.use('/api/auth', authRouter);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(NotFound(`Route not found: ${req.method} ${req.path}`, 'NOT_FOUND'));
