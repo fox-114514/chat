@@ -114,13 +114,13 @@ export default function MessageInput({
   );
 
   return (
-    <div className="border-t border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+    <div className="border-t border-gray-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900 sm:p-3">
       {error && (
         <div className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {error}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <form onSubmit={handleSubmit} className="flex items-end gap-1.5 sm:gap-2">
         <input
           type="file"
           ref={fileInputRef}
@@ -132,9 +132,10 @@ export default function MessageInput({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || disabled}
-          className="rounded-md p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="rounded-md p-2.5 text-gray-500 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800 sm:p-2"
+          aria-label="Attach file"
         >
-          <Paperclip className="h-5 w-5" />
+          <Paperclip className="h-6 w-6 sm:h-5 sm:w-5" />
         </button>
 
         <textarea
@@ -144,15 +145,16 @@ export default function MessageInput({
           placeholder={uploading ? 'Uploading file...' : 'Type a message...'}
           disabled={disabled || uploading}
           rows={1}
-          className="max-h-32 flex-1 resize-none rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-md border border-gray-300 px-3 py-2.5 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:py-2 sm:text-sm"
         />
 
         <button
           type="submit"
           disabled={!content.trim() || disabled || uploading}
-          className="rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-blue-600 p-2.5 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:p-2"
+          aria-label="Send message"
         >
-          <Send className="h-5 w-5" />
+          <Send className="h-6 w-6 sm:h-5 sm:w-5" />
         </button>
       </form>
     </div>

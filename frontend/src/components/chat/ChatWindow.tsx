@@ -161,7 +161,7 @@ export default function ChatWindow() {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+      <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:px-4 sm:py-3">
         <Avatar username={display.name} avatarColor={display.avatarColor} size="md" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold text-gray-900 dark:text-white">

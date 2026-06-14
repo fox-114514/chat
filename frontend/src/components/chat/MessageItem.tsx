@@ -12,9 +12,11 @@ export default function MessageItem({ message, isMe }: MessageItemProps) {
   const { sender, content, type, file, createdAt } = message;
 
   return (
-    <div className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-      <Avatar username={sender.username} avatarColor={sender.avatarColor} size="sm" />
-      <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+    <div className={`flex gap-2 sm:gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+      <div className="hidden sm:block">
+        <Avatar username={sender.username} avatarColor={sender.avatarColor} size="sm" />
+      </div>
+      <div className={`max-w-[82%] sm:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
         <div className="mb-0.5 flex items-center gap-2">
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
             {sender.username}

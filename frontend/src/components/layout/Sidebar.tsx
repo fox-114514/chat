@@ -80,9 +80,11 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute left-4 top-4 z-20 rounded-md bg-white p-2 shadow-sm dark:bg-gray-800 md:hidden"
+        className="fixed left-3 top-3 z-20 rounded-md bg-white p-2.5 shadow-sm dark:bg-gray-800 md:hidden"
+        style={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
+        aria-label="Toggle sidebar"
       >
-        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
 
       <aside
@@ -91,7 +93,7 @@ export default function Sidebar() {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
+        <div className="flex items-center justify-between border-b border-gray-200 p-4 pt-[max(1rem,env(safe-area-inset-top))] dark:border-gray-700 md:pt-4">
           <div className="flex items-center gap-3">
             <Avatar username={user.username} avatarColor={user.avatarColor} size="sm" />
             <div className="min-w-0">

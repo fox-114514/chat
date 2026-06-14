@@ -10,7 +10,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { sidebarOpen } = useUIStore();
 
   return (
-    <div className="flex h-full bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-[100dvh] overflow-hidden bg-gray-50 touch-manipulation dark:bg-gray-950">
       <Sidebar />
       <main
         className={`flex-1 transition-all md:ml-0 ${
