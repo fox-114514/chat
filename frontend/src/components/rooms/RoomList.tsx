@@ -29,56 +29,85 @@ export default function RoomList({ rooms, currentUserId }: RoomListProps) {
   const navigate = useNavigate();
   const { roomId } = useParams();
   const onlineUsers = useChatStore((state) => state.onlineUsers);
+  const messagesByRoom = useChatStore((state) => state.messages);
 
   const sortedRooms = useMemo(() => {
     return [...rooms].sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      // Sort by latest message time if available, otherwise room creation time
+      const aMessages = messagesByRoom[a.id] ?? [];
+      const bMessages = messagesByRoom[b.id] ?? [];
+      const aTime =
+        aMessages.length > 0
+          ? new Date(aMessages[aMessages.length - 1].createdAt).getTime()
+          : new Date(a.createdAt).getTime();
+      const bTime =
+        bMessages.length > 0
+          ? new Date(bMessages[bMessages.length - 1].createdAt).getTime()
+          : new Date(b.createdAt).getTime();
+      return bTime - aTime;
     });
-  }, [rooms]);
+  }, [rooms, messagesByRoom]);
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="h-full overflow-y-auto">
       {sortedRooms.length === 0 ? (
-        <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          No conversations yet
+        <div className="flex h-40 flex-col items-center justify-center p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p>No conversations yet</p>
+          <p className="mt-1 text-xs">Search users to start a chat</p>
         </div>
       ) : (
-        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+        <ul className="divide-y divide-gray-50 dark:divide-gray-800">
           {sortedRooms.map((room) => {
             const display = getRoomDisplay(room, currentUserId);
             const isActive = room.id === roomId;
             const isOnline =
-              room.isDirect && display.otherUserId
-                ? onlineUsers.has(display.otherUserId)
-                : undefined;
+              room.isDirect && display.otherUserId ? onlineUsers.has(display.otherUserId) : false;
+            const roomMessages = messagesByRoom[room.id] ?? [];
+            const lastMessage = roomMessages.length > 0 ? roomMessages[roomMessages.length - 1] : null;
+
             return (
               <li key={room.id}>
                 <button
                   type="button"
                   onClick={() => navigate(`/chat/${room.id}`)}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                    isActive ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
+                    isActive
+                      ? 'bg-blue-50/80 dark:bg-blue-900/20'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'
                   }`}
                 >
                   <Avatar
                     username={display.name}
                     avatarColor={display.avatarColor}
-                    size="sm"
+                    size="md"
                     isOnline={isOnline}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                         {display.name}
                       </span>
-                      {room.unreadCount > 0 && (
-                        <span className="ml-2 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-medium text-white">
-                          {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                      {lastMessage && (
+                        <span className="flex-shrink-0 text-[10px] text-gray-400 dark:text-gray-500">
+                          {formatTime(lastMessage.createdAt)}
                         </span>
                       )}
                     </div>
-                    <div className="truncate text-xs text-gray-500 dark:text-gray-400">
-                      {room.isDirect ? 'Direct message' : `${room.members.length} members`}
+                    <div className="mt-0.5 flex items-center justify-between gap-2">
+                      <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                        {lastMessage
+                          ? lastMessage.type === 'image'
+                            ? '📷 Photo'
+                            : lastMessage.type === 'file'
+                              ? '📎 File'
+                              : lastMessage.content
+                          : 'No messages yet'}
+                      </span>
+                      {room.unreadCount > 0 && (
+                        <span className="flex h-5 min-w-[1.25rem] flex-shrink-0 items-center justify-center rounded-full bg-blue-500 px-1.5 text-[10px] font-semibold text-white">
+                          {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -89,4 +118,19 @@ export default function RoomList({ rooms, currentUserId }: RoomListProps) {
       )}
     </div>
   );
+}
+
+function formatTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  }
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

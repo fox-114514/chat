@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { useChatStore } from '../../store/chatStore';
 import { fetchMessages } from '../../api/messages';
@@ -10,12 +10,14 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import Avatar from '../common/Avatar';
+import { ArrowLeft, Phone, Video } from 'lucide-react';
 import type { Room, Message } from '../../types/models';
 
 const DEFAULT_LIMIT = 20;
 
 export default function ChatWindow() {
   const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const {
     setCurrentRoomId,
@@ -152,8 +154,25 @@ export default function ChatWindow() {
 
   if (!roomId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-gray-50 text-gray-500 dark:bg-gray-950 dark:text-gray-400">
-        <p>Select a conversation to start chatting</p>
+      <div className="hidden h-full flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 md:flex">
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <svg
+              className="h-8 w-8 text-blue-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+          </div>
+          <p className="text-gray-500 dark:text-gray-400">Select a conversation to start chatting</p>
+        </div>
       </div>
     );
   }
@@ -161,27 +180,53 @@ export default function ChatWindow() {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:px-4 sm:py-3">
+      <div className="flex flex-shrink-0 items-center gap-3 border-b border-gray-100 bg-white/90 px-3 py-2 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/90 sm:px-4 sm:py-3">
+        <button
+          type="button"
+          onClick={() => navigate('/chat')}
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 md:hidden dark:text-gray-300 dark:hover:bg-gray-800"
+          aria-label="Back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+
         <Avatar username={display.name} avatarColor={display.avatarColor} size="md" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold text-gray-900 dark:text-white">
             {display.name}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {display.isDirect ? 'Direct message' : `${room?.members.length ?? 0} members`}
+            {display.isDirect ? 'Online' : `${room?.members.length ?? 0} members`}
           </p>
+        </div>
+
+        <div className="hidden items-center gap-1 sm:flex">
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Voice call"
+          >
+            <Phone className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Video call"
+          >
+            <Video className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
       {error && (
-        <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+        <div className="flex-shrink-0 border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {error}
         </div>
       )}
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center text-sm text-gray-500">
-          Loading messages...
+          <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
         </div>
       ) : (
         <MessageList

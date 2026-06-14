@@ -24,6 +24,14 @@ body {
   overscroll-behavior: none;
 }
 
+/* Mobile auth page gradient background */
+.auth-bg {
+  background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+}
+.dark .auth-bg {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+}
+
 /* Prevent iOS tap highlight and long-press menus on buttons */
 button,
 a {
@@ -35,4 +43,23 @@ a {
   .touch-manipulation {
     touch-action: manipulation;
   }
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6);
 }

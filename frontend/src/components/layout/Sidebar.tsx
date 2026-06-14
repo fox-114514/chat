@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { LogOut, Menu, Plus, Search, X } from 'lucide-react';
+import { LogOut, Plus, Search, X } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useChatStore } from '../../store/chatStore';
-import { useUIStore } from '../../store/uiStore';
 import { searchUsers } from '../../api/users';
 import { createRoom, getOrCreateDirectRoom } from '../../api/rooms';
 import { getApiErrorMessage } from '../../api/client';
@@ -13,7 +12,6 @@ import type { User } from '../../types/models';
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const { rooms, setRooms } = useChatStore();
-  const { sidebarOpen, setSidebarOpen } = useUIStore();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
@@ -75,80 +73,63 @@ export default function Sidebar() {
   if (!user) return null;
 
   return (
-    <>
-      {/* Mobile toggle */}
-      <button
-        type="button"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed left-3 top-3 z-20 rounded-md bg-white p-2.5 shadow-sm dark:bg-gray-800 md:hidden"
-        style={{ top: 'max(0.75rem, env(safe-area-inset-top))' }}
-        aria-label="Toggle sidebar"
-      >
-        {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </button>
-
-      <aside
-        className={`fixed inset-y-0 left-0 z-10 flex w-72 flex-col border-r border-gray-200 bg-white transition-transform dark:border-gray-700 dark:bg-gray-900 md:static md:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-4 pt-[max(1rem,env(safe-area-inset-top))] dark:border-gray-700 md:pt-4">
-          <div className="flex items-center gap-3">
-            <Avatar username={user.username} avatarColor={user.avatarColor} size="sm" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                {user.username}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Online</p>
-            </div>
+    <aside className="hidden h-full w-72 flex-col border-r border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900 md:flex lg:w-80">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-100 p-4 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <Avatar username={user.username} avatarColor={user.avatarColor} size="sm" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+              {user.username}
+            </p>
+            <p className="text-xs text-green-500">Online</p>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
         </div>
+        <button
+          type="button"
+          onClick={logout}
+          className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          title="Logout"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 border-b border-gray-200 p-3 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className="flex flex-1 items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            <Search className="h-4 w-4" />
-            Search users
-          </button>
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="rounded-md bg-blue-600 p-1.5 text-white hover:bg-blue-700"
-            title="New group"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+      {/* Actions */}
+      <div className="flex items-center gap-2 border-b border-gray-100 p-3 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="flex flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          <Search className="h-4 w-4" />
+          Search users
+        </button>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="rounded-lg bg-blue-500 p-2.5 text-white shadow-sm shadow-blue-500/20 hover:bg-blue-600"
+          title="New group"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      {error && (
+        <div className="mx-3 mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+          {error}
         </div>
+      )}
 
-        {error && (
-          <div className="mx-3 mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
-            {error}
-          </div>
-        )}
-
-        {/* Room list */}
-        <RoomList rooms={rooms} currentUserId={user.id} />
-      </aside>
+      {/* Room list */}
+      <RoomList rooms={rooms} currentUserId={user.id} />
 
       {/* Search modal */}
       {searchOpen && (
-        <div className="fixed inset-0 z-30 flex items-start justify-center bg-black/50 pt-20">
-          <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow-lg dark:bg-gray-800">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-20">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-xl dark:bg-gray-800">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Start chat</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Start chat</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -157,8 +138,9 @@ export default function Sidebar() {
                   setSearchResults([]);
                   setError(null);
                 }}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <X className="h-4 w-4 text-gray-500" />
+                <X className="h-4 w-4" />
               </button>
             </div>
             <input
@@ -167,7 +149,7 @@ export default function Sidebar() {
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search by username..."
               autoFocus
-              className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="mb-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
             {searchLoading && <p className="text-xs text-gray-500">Searching...</p>}
             <ul className="max-h-60 overflow-y-auto">
@@ -176,7 +158,7 @@ export default function Sidebar() {
                   <button
                     type="button"
                     onClick={() => startDirect(u)}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <Avatar username={u.username} avatarColor={u.avatarColor} size="sm" />
                     <span className="text-sm text-gray-900 dark:text-white">{u.username}</span>
@@ -193,13 +175,13 @@ export default function Sidebar() {
 
       {/* Create room modal */}
       {createOpen && (
-        <div className="fixed inset-0 z-30 flex items-start justify-center bg-black/50 pt-20">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-20">
           <form
             onSubmit={handleCreateRoom}
-            className="w-full max-w-sm rounded-lg bg-white p-4 shadow-lg dark:bg-gray-800"
+            className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-xl dark:bg-gray-800"
           >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">New group</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">New group</h3>
               <button
                 type="button"
                 onClick={() => {
@@ -208,8 +190,9 @@ export default function Sidebar() {
                   setSelectedMemberIds([]);
                   setError(null);
                 }}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <X className="h-4 w-4 text-gray-500" />
+                <X className="h-4 w-4" />
               </button>
             </div>
             <input
@@ -217,21 +200,21 @@ export default function Sidebar() {
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               placeholder="Group name"
-              className="mb-3 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="mb-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
             <div className="mb-3">
               <UserSelect selectedIds={selectedMemberIds} onChange={setSelectedMemberIds} />
             </div>
             <button
               type="submit"
-              className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="w-full rounded-xl bg-blue-500 px-3 py-2 text-sm font-medium text-white hover:bg-blue-600"
             >
               Create
             </button>
           </form>
         </div>
       )}
-    </>
+    </aside>
   );
 }
 
@@ -278,7 +261,7 @@ function UserSelect({
         value={query}
         onChange={(e) => handleSearch(e.target.value)}
         placeholder="Search members..."
-        className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        className="mb-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
       />
       {loading && <p className="text-xs text-gray-500">Searching...</p>}
       <ul className="max-h-40 overflow-y-auto">
@@ -287,7 +270,7 @@ function UserSelect({
             <button
               type="button"
               onClick={() => toggleUser(u.id)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <input
                 type="checkbox"

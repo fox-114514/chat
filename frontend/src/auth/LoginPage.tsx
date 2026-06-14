@@ -21,7 +21,7 @@ export default function LoginPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-        Loading...
+        <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
       </div>
     );
   }
@@ -49,9 +49,10 @@ export default function LoginPage() {
   return (
     <AuthForm
       title="Welcome back"
-      submitLabel="Login"
-      loadingLabel="Logging in..."
-      altLink={{ to: '/register', text: 'Need an account? Register →' }}
+      subtitle="Sign in to continue messaging"
+      submitLabel="Sign in"
+      loadingLabel="Signing in..."
+      altLink={{ to: '/register', text: "Don't have an account? Sign up" }}
       error={error}
       isLoading={isSubmitting}
       onSubmit={handleSubmit}
@@ -59,7 +60,7 @@ export default function LoginPage() {
       <div>
         <label
           htmlFor="username"
-          className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           Username
         </label>
@@ -70,15 +71,15 @@ export default function LoginPage() {
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
           autoFocus
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 sm:text-sm"
-          placeholder="your_username"
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:bg-gray-800"
+          placeholder="Enter your username"
         />
       </div>
 
       <div>
         <label
           htmlFor="password"
-          className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           Password
         </label>
@@ -88,8 +89,8 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-base text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 sm:text-sm"
-          placeholder="••••••••"
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:bg-gray-800"
+          placeholder="Enter your password"
         />
       </div>
     </AuthForm>

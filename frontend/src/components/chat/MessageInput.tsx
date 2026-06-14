@@ -51,8 +51,8 @@ export default function MessageInput({
       } catch {
         // ignore
       }
-      hasTypedRef.current = true;
     }
+    hasTypedRef.current = true;
     if (typingStopTimerRef.current) {
       clearTimeout(typingStopTimerRef.current);
     }
@@ -91,7 +91,7 @@ export default function MessageInput({
       try {
         const uploaded = await uploadFile(file);
         const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic']);
         const type: 'file' | 'image' =
           file.type.startsWith('image/') || imageExts.has(ext) ? 'image' : 'file';
         onSendFile(
@@ -113,48 +113,57 @@ export default function MessageInput({
     [onSendFile],
   );
 
+  const canSend = content.trim().length > 0 && !disabled && !uploading;
+
   return (
-    <div className="border-t border-gray-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-gray-700 dark:bg-gray-900 sm:p-3">
+    <div className="border-t border-gray-100 bg-white/80 px-3 py-2 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80 sm:px-4 sm:py-3">
       {error && (
-        <div className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+        <div className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {error}
         </div>
       )}
-      <form onSubmit={handleSubmit} className="flex items-end gap-1.5 sm:gap-2">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           className="hidden"
           disabled={uploading || disabled}
+          accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip"
         />
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || disabled}
-          className="rounded-md p-2.5 text-gray-500 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-gray-800 sm:p-2"
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800"
           aria-label="Attach file"
         >
-          <Paperclip className="h-6 w-6 sm:h-5 sm:w-5" />
+          <Paperclip className="h-5 w-5" />
         </button>
 
-        <textarea
-          value={content}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={uploading ? 'Uploading file...' : 'Type a message...'}
-          disabled={disabled || uploading}
-          rows={1}
-          className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-md border border-gray-300 px-3 py-2.5 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:py-2 sm:text-sm"
-        />
+        <div className="relative flex-1">
+          <textarea
+            value={content}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={uploading ? 'Uploading file...' : 'Type a message...'}
+            disabled={disabled || uploading}
+            rows={1}
+            className="max-h-32 w-full resize-none rounded-2xl border-0 bg-gray-100 px-4 py-3 text-base leading-5 text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-60 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:bg-gray-800 sm:text-sm"
+          />
+        </div>
 
         <button
           type="submit"
-          disabled={!content.trim() || disabled || uploading}
-          className="rounded-md bg-blue-600 p-2.5 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:p-2"
+          disabled={!canSend}
+          className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-white transition-all ${
+            canSend
+              ? 'bg-blue-500 shadow-md shadow-blue-500/30 hover:bg-blue-600'
+              : 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-800'
+          }`}
           aria-label="Send message"
         >
-          <Send className="h-6 w-6 sm:h-5 sm:w-5" />
+          <Send className={`h-5 w-5 ${canSend ? '' : 'opacity-50'}`} />
         </button>
       </form>
     </div>
