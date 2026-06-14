@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import type { User } from '../types/models';
-import { clearTokens, setTokens as persistTokens } from '../api/client';
+import { api, clearTokens, getAccessToken, setTokens as persistTokens } from '../api/client';
 
 interface AuthState {
   user: User | null;
@@ -15,8 +15,38 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(() => getAccessToken());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    api
+      .get<{ user: User }>('/auth/me')
+      .then((res) => {
+        if (cancelled) return;
+        setUser(res.data.user);
+        setAccessToken(token);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        clearTokens();
+        setAccessToken(null);
+        setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const setAuth = useCallback((u: User, access: string, refresh: string) => {
     setUser(u);
