@@ -14,7 +14,7 @@ type AppIo = Server<
   SocketData
 >;
 
-export function registerTypingHandlers(socket: Socket, io: AppIo): void {
+export function registerTypingHandlers(socket: Socket, _io: AppIo): void {
   const userId = socket.data.user.userId;
 
   socket.on('typing:start', (data) => {
@@ -27,7 +27,6 @@ export function registerTypingHandlers(socket: Socket, io: AppIo): void {
       roomId: data.roomId,
       isTyping: true,
     });
-    void io;
   });
 
   socket.on('typing:stop', (data) => {
@@ -40,6 +39,5 @@ export function registerTypingHandlers(socket: Socket, io: AppIo): void {
       roomId: data.roomId,
       isTyping: false,
     });
-    void io;
   });
 }

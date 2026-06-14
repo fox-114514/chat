@@ -2,6 +2,7 @@ import type { Server, Socket } from 'socket.io';
 import { pool } from '../../db/pool';
 import { requireMember } from '../../db/rooms';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../utils/errors';
 import type {
   ClientToServerEvents,
   InterServerEvents,
@@ -29,10 +30,19 @@ export function registerRoomHandlers(socket: Socket, _io: AppIo): void {
       logger.debug({ userId, roomId: data.roomId }, 'socket joined room');
       cb({ ok: true });
     } catch (err) {
-      const code = (err as { code?: string }).code ?? 'INTERNAL_ERROR';
-      const message = err instanceof Error ? err.message : 'failed to join room';
-      logger.warn({ err, userId: socket.data.user.userId, roomId: data?.roomId }, 'room:join failed');
-      cb({ ok: false, error: code, message, code });
+      logger.warn(
+        {
+          err,
+          userId: socket.data.user.userId,
+          roomId: typeof data?.roomId === 'string' ? data.roomId : undefined,
+        },
+        'room:join failed',
+      );
+      if (err instanceof AppError) {
+        cb({ ok: false, error: err.message, code: err.code ?? 'JOIN_FAILED' });
+        return;
+      }
+      cb({ ok: false, error: 'JOIN_FAILED', code: 'JOIN_FAILED' });
     }
   });
 

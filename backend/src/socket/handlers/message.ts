@@ -2,6 +2,7 @@ import type { Server, Socket } from 'socket.io';
 import { pool } from '../../db/pool';
 import { requireMember } from '../../db/rooms';
 import { logger } from '../../utils/logger';
+import { AppError } from '../../utils/errors';
 import { MessageRow, MessageType, rowToMessage } from '../../types/models';
 import type {
   ClientToServerEvents,
@@ -72,7 +73,7 @@ function validateContent(type: MessageType, content: unknown): string {
   return '';
 }
 
-export function registerMessageHandlers(socket: Socket, io: AppIo): void {
+export function registerMessageHandlers(socket: Socket, _io: AppIo): void {
   const userId = socket.data.user.userId;
 
   socket.on('message:send', async (raw, cb) => {
@@ -133,13 +134,16 @@ export function registerMessageHandlers(socket: Socket, io: AppIo): void {
 
       cb({ ok: true, message });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'failed to send message';
       logger.warn(
         { err, userId, payload: raw },
         'message:send failed',
       );
+      if (err instanceof AppError) {
+        cb({ ok: false, error: err.message, code: err.code ?? 'SEND_FAILED' });
+        return;
+      }
+      const message = err instanceof Error ? err.message : 'failed to send message';
       cb({ ok: false, error: 'SEND_FAILED', message, code: 'SEND_FAILED' });
-      void io;
     }
   });
 }

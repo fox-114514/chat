@@ -52,7 +52,7 @@ export function initSocket(httpServer: HttpServer): AppIo {
     );
 
     if (becameOnline) {
-      io!.emit('presence:update', { userId, online: true });
+      getIO().emit('presence:update', { userId, online: true });
     }
 
     registerRoomHandlers(socket, io!);
@@ -66,7 +66,7 @@ export function initSocket(httpServer: HttpServer): AppIo {
         'socket disconnected',
       );
       if (wentOffline) {
-        io!.emit('presence:update', { userId, online: false });
+        getIO().emit('presence:update', { userId, online: false });
       }
     });
   });
