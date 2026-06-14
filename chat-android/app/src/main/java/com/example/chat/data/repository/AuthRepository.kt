@@ -6,6 +6,7 @@ import com.example.chat.data.model.AuthResponse
 import com.example.chat.data.model.User
 import com.example.chat.util.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 class AuthRepository(
     private val authApi: AuthApi,
@@ -36,7 +37,14 @@ class AuthRepository(
 
     suspend fun restoreSession(): Result<User> {
         return when (val result = authApi.getMe()) {
-            is Result.Success -> Result.Success(result.data)
+            is Result.Success -> {
+                dataStore.saveTokens(
+                    dataStore.accessToken.first() ?: "",
+                    dataStore.refreshToken.first() ?: "",
+                    result.data.id
+                )
+                Result.Success(result.data)
+            }
             is Result.Error -> {
                 dataStore.clearTokens()
                 result

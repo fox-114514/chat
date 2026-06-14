@@ -19,7 +19,8 @@ class MessageApi(private val apiService: ChatApiService, private val gson: Gson)
                 if (body != null) {
                     val messagesJson = gson.toJsonTree(body["messages"])
                     val messagesType = object : TypeToken<List<Message>>() {}.type
-                    val messages: List<Message> = gson.fromJson(messagesJson, messagesType)
+                    val apiMessages: List<Message> = gson.fromJson(messagesJson, messagesType)
+                    val messages = apiMessages.asReversed() // API returns newest-first; UI expects oldest-first
                     val hasMore = body["hasMore"] as? Boolean ?: false
                     Result.Success(messages to hasMore)
                 } else {
