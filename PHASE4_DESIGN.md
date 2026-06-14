@@ -24,7 +24,9 @@ backend/src/
 │   ├── rooms.ts                 (改)  挂载 /:id/messages 和 /:id/read
 │   └── messages.ts              (新)  消息查询逻辑模块,**不被 index.ts 直接挂载**
 ├── db/
-│   └── roomAccess.ts            (新)  isMember / requireMember,REST 和 socket 共用
+│   └── rooms.ts                 (已有) Phase 3 已有,本阶段继续用
+│                                fetchRoomMembers / fetchRoomMembersBatch / requireMember
+│                                (REST 和 socket 共用)
 ├── socket/
 │   ├── server.ts                (新)  从 index.ts 抽出,挂中间件和 handlers
 │   ├── auth.ts                  (新)  Socket.IO 鉴权中间件
@@ -159,30 +161,27 @@ export const onlineUsers = new Map<string, Set<string>>();
 - 缓解:v1 用户都是受邀请的,问题不大;v2 再考虑"只对同房间广播"
 - 已在本文档**明确标注这个权衡**
 
-### 4.4 共享成员查询 `db/roomAccess.ts`
+### 4.4 共享成员查询 `db/rooms.ts`
 
-REST 和 socket 共用,避免重复:
+REST 和 socket 共用,**已在 Phase 3 落地**,本阶段继续使用:
 
 ```ts
-import { pool } from './pool';
+// fetchRoomMembers(pool, roomId) → RoomMember[]
+//   单房间成员列表,含 username/avatar_color
 
-export async function isMember(roomId: string, userId: string): Promise<boolean> {
-  const result = await pool.query(
-    `SELECT 1 FROM room_members WHERE room_id = $1 AND user_id = $2`,
-    [roomId, userId],
-  );
-  return result.rowCount !== null && result.rowCount > 0;
-}
+// fetchRoomMembersBatch(pool, roomIds[]) → Map<roomId, RoomMember[]>
+//   批量查,房间列表页用
 
-export async function requireMember(roomId: string, userId: string): Promise<void> {
-  const ok = await isMember(roomId, userId);
-  if (!ok) {
-    throw Forbidden('not a member of this room', 'NOT_MEMBER');
-  }
-}
+// requireMember(pool, roomId, userId) → Promise<RoomRole>
+//   校验成员身份,非成员抛 Forbidden('NOT_MEMBER')
+//   返回 'admin' | 'member',REST 权限判断也用它
 ```
 
-`routes/rooms.ts` 里的 `requireMembership`(返回 role,仅 REST 用)保留,但内部可以复用 `isMember`。
+**调用约定**:所有函数显式接收 `pool` 参数(从 import `../db/pool` 传入),不依赖模块级单例。这样:
+- 事务里可以传 `client` 而非 `pool`(v2 可能用到)
+- 测试里可以注入 mock pool
+
+`routes/rooms.ts` 的 `requireMembership` 在 Phase 3 fix 中**已合并到 `requireMember`**,REST 拿 `await requireMember(pool, ...)` 返回的 role 即可。
 
 ### 4.5 Handlers
 
@@ -440,11 +439,11 @@ socket.on('disconnect') in server.ts:
 - 在 `start()` 中 `runMigrations()` 之后、`httpServer.listen()` 之前调用 `initSocket(httpServer)`
 - shutdown 中改为 `getIO().close()`
 
-### 7.2 `routes/rooms.ts` 改用 `db/roomAccess.ts`
+### 7.2 `socket/handlers/*` 复用 `db/rooms.ts`
 
-- 从 `routes/rooms.ts` 抽出 `isMember` / `requireMember` 到 `db/roomAccess.ts`
-- `routes/rooms.ts` 的 `requireMembership` 保留(返回 role),但内部可复用 `isMember`
-- `socket/handlers/*` 统一用 `db/roomAccess.ts`
+- `socket/handlers/rooms.ts` 的 `room:join` 校验、`socket/handlers/message.ts` 的 `message:send` 校验都直接 `await requireMember(pool, ...)`
+- 角色判断(目前 socket 不需要,但保留扩展性):也由 `requireMember` 返回值提供
+- Phase 3 已建好 `db/rooms.ts`,**本阶段无需新建**
 
 ### 7.3 `routes/rooms.ts` 挂载消息路由
 
@@ -471,7 +470,7 @@ router.post('/:id/read', requireAuth, messageController.markRead);
 | 4 | message:send content 长度上限 | **4000 字符** | text 类型强制;file/image 可选 |
 | 5 | 同一用户多端 presence | **聚合** | 首连接广播上线,全断开广播下线 |
 | 6 | hasMore 计算 | **返回条数 == limit 则 true** | 简化策略,可能多查一次 |
-| 7 | 共享成员查询模块 | **`db/roomAccess.ts`** | REST 和 socket 共用 |
+| 7 | 共享成员查询模块 | **`db/rooms.ts`** (Phase 3 已有) | REST 和 socket 共用 |
 | 8 | presence 逻辑位置 | **`socket/server.ts` 内联** | 跨 socket 生命周期 |
 | 9 | room:join 后回放未送达消息 | **不做** | 用 REST 拉历史 |
 | 10 | 断线时更新 last_seen_at | **暂不更新** | 推迟统一做 |
@@ -482,9 +481,9 @@ router.post('/:id/read', requireAuth, messageController.markRead);
 
 ```
 1. types/models.ts: 加 Message / FileMeta / MessageRow / rowToMessage
-2. db/roomAccess.ts: isMember / requireMember
-3. routes/rooms.ts: 改用 db/roomAccess.ts,挂载 /:id/messages 和 /:id/read
-4. routes/messages.ts: GET 消息历史 + POST 已读
+2. db/rooms.ts: 已有,本阶段无需改
+3. routes/messages.ts: 控制器模块,导 list / markRead 函数
+4. routes/rooms.ts: 加 import,挂载 /:id/messages 和 /:id/read
 5. types/socket.ts: 事件类型 + SocketData
 6. socket/onlineUsers.ts: 内存在线状态管理
 7. socket/auth.ts: 鉴权中间件
