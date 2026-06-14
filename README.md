@@ -14,6 +14,7 @@
 - [项目结构](#项目结构)
 - [快速开始](#快速开始)
 - [部署指南](#部署指南)
+- [Android 客户端](#android-客户端)
 - [环境变量](#环境变量)
 - [API 与事件](#api-与事件)
 - [开发计划](#开发计划)
@@ -37,6 +38,7 @@
 - [x] "正在输入" 提示
 - [x] 未读消息计数
 - [x] Docker Compose 一键部署
+- [x] Android 客户端（自动连接服务器、注册/登录、聊天、文件上传）
 
 ### v2 计划
 
@@ -46,6 +48,8 @@
 - [ ] 消息编辑 / 撤回
 - [ ] 消息搜索
 - [ ] Web Push 通知
+- [ ] Android 端端到端加密
+- [ ] Android Push 通知
 
 ---
 
@@ -77,6 +81,18 @@
 | Axios | HTTP 客户端 |
 | socket.io-client | 实时客户端 |
 | lucide-react | 图标 |
+
+### Android 客户端
+
+| 技术 | 用途 |
+|------|------|
+| Kotlin | 开发语言 |
+| Jetpack Compose | UI 框架 |
+| MVVM + Repository | 架构模式 |
+| Retrofit2 + OkHttp3 | REST API 客户端 |
+| Socket.IO Java Client | 实时通信 |
+| DataStore | 本地配置与 Token 持久化 |
+| Coil | 图片加载 |
 
 ### 部署
 
@@ -133,6 +149,20 @@ chat-app/
 │       ├── styles/              # 全局样式
 │       ├── types/               # 类型定义
 │       └── utils/               # 工具函数
+│
+├── chat-android/                # Android 客户端
+│   ├── app/
+│   │   ├── build.gradle.kts
+│   │   └── src/main/java/com/example/chat/
+│   │       ├── MainActivity.kt
+│   │       ├── ChatApplication.kt
+│   │       ├── di/              # 依赖注入（AppModule / ViewModelFactory）
+│   │       ├── data/            # 数据层（API、Socket、DataStore、Repository）
+│   │       ├── ui/              # Compose UI 与 ViewModel
+│   │       └── util/            # 工具类
+│   ├── gradle/
+│   ├── build.gradle.kts
+│   └── settings.gradle.kts
 │
 └── deploy/                      # 部署脚本
     ├── init.sh
@@ -298,6 +328,59 @@ docker run --rm \
   -v /backup:/backup \
   alpine tar czf /backup/storage-$(date +%Y%m%d).tar.gz -C /data .
 ```
+
+---
+
+## Android 客户端
+
+`chat-android` 是配套的 Android 原生客户端，默认自动连接到服务器 `http://64.90.30.102`。首次打开应用时确认服务器地址，然后注册/登录即可开始聊天。
+
+### 功能
+
+- 自动连接固定服务器（可在首次启动时修改 URL）
+- 用户注册 / 登录 / 自动恢复登录态
+- 一对一私聊与群聊
+- 实时文本、图片、文件收发
+- 消息历史分页加载
+- 在线状态与"正在输入"提示
+- 未读消息计数
+
+### 构建 Debug APK
+
+```bash
+cd chat-android
+./gradlew :app:assembleDebug
+```
+
+构建产物位于：
+
+```
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+### 安装到设备
+
+```bash
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+或把 APK 发送到 Android 设备手动安装。
+
+### 修改服务器地址
+
+应用默认服务器 URL 为 `http://64.90.30.102`。如需指向其他服务器，修改：
+
+```kotlin
+// app/src/main/java/com/example/chat/data/local/DataStoreManager.kt
+const val DEFAULT_SERVER_URL = "http://your-server-ip"
+```
+
+重新构建 APK 即可。
+
+### 注意
+
+- 当前 Android 客户端通过 `android:usesCleartextTraffic="true"` 支持 HTTP 明文传输，仅用于测试环境。
+- 生产环境请为服务端配置 HTTPS，并关闭该属性。
 
 ---
 
