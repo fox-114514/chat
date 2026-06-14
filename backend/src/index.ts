@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import http from 'http';
-import { Server as SocketIOServer } from 'socket.io';
 
 import { env } from './config/env';
 import { logger } from './utils/logger';
@@ -12,6 +11,7 @@ import authRouter from './routes/auth';
 import usersRouter from './routes/users';
 import roomsRouter from './routes/rooms';
 import directRouter from './routes/direct';
+import { initSocket, closeSocket } from './socket/server';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -47,20 +47,6 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: InternalError().message, code: 'INTERNAL_ERROR' });
 });
 
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',').map((s) => s.trim()),
-    credentials: true,
-  },
-});
-
-io.on('connection', (socket) => {
-  logger.debug({ sid: socket.id }, 'socket connected');
-  socket.on('disconnect', (reason) => {
-    logger.debug({ sid: socket.id, reason }, 'socket disconnected');
-  });
-});
-
 async function start(): Promise<void> {
   try {
     await runMigrations();
@@ -68,6 +54,8 @@ async function start(): Promise<void> {
     logger.fatal({ err }, 'migration failed; aborting');
     process.exit(1);
   }
+
+  initSocket(httpServer);
 
   httpServer.listen(env.PORT, () => {
     logger.info({ port: env.PORT, env: env.NODE_ENV }, 'server listening');
@@ -80,9 +68,7 @@ async function shutdown(signal: string): Promise<void> {
   shuttingDown = true;
   logger.info({ signal }, 'shutting down');
 
-  await new Promise<void>((resolve) => {
-    io.close(() => resolve());
-  });
+  await closeSocket();
 
   await new Promise<void>((resolve) => {
     httpServer.close(() => resolve());

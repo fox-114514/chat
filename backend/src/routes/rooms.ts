@@ -5,6 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequest, NotFound, Forbidden, Conflict } from '../utils/errors';
 import { RoomRow, roomRowToDto } from '../types/models';
 import { fetchRoomMembers, fetchRoomMembersBatch, requireMember } from '../db/rooms';
+import * as messageController from './messages';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -149,6 +150,18 @@ router.get(
     const members = await fetchRoomMembers(pool, room.id);
     res.json({ room: roomRowToDto(room, members) });
   }),
+);
+
+router.get(
+  '/:id/messages',
+  requireAuth,
+  messageController.list,
+);
+
+router.post(
+  '/:id/read',
+  requireAuth,
+  messageController.markRead,
 );
 
 router.post(

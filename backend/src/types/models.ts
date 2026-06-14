@@ -115,3 +115,76 @@ export function groupMembersByRoom(
   }
   return map;
 }
+
+export type MessageType = 'text' | 'file' | 'image';
+
+export interface FileMeta {
+  id: string;
+  originalName: string;
+  sizeBytes: number;
+  mimeType: string;
+  url: string;
+}
+
+export interface MessageSender {
+  id: string;
+  username: string;
+  avatarColor: string;
+}
+
+export interface Message {
+  id: string;
+  roomId: string;
+  senderId: string;
+  sender: MessageSender;
+  content: string;
+  type: MessageType;
+  file: FileMeta | null;
+  createdAt: string;
+  editedAt: string | null;
+}
+
+export interface MessageRow {
+  id: string;
+  room_id: string;
+  sender_id: string;
+  content: string;
+  type: string;
+  file_id: string | null;
+  created_at: Date;
+  edited_at: Date | null;
+  sender_username?: string;
+  sender_avatar_color?: string;
+  file_original_name?: string | null;
+  file_size_bytes?: string | null;
+  file_mime_type?: string | null;
+}
+
+export function rowToMessage(row: MessageRow): Message {
+  let file: FileMeta | null = null;
+  if (row.file_id) {
+    file = {
+      id: row.file_id,
+      originalName: row.file_original_name ?? 'unknown',
+      sizeBytes: row.file_size_bytes ? Number(row.file_size_bytes) : 0,
+      mimeType: row.file_mime_type ?? 'application/octet-stream',
+      url: `/api/files/${row.file_id}`,
+    };
+  }
+
+  return {
+    id: row.id,
+    roomId: row.room_id,
+    senderId: row.sender_id,
+    sender: {
+      id: row.sender_id,
+      username: row.sender_username ?? 'unknown',
+      avatarColor: row.sender_avatar_color ?? '#3b82f6',
+    },
+    content: row.content,
+    type: row.type as MessageType,
+    file,
+    createdAt: row.created_at.toISOString(),
+    editedAt: row.edited_at?.toISOString() ?? null,
+  };
+}
