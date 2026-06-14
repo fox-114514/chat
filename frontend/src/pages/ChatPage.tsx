@@ -8,6 +8,7 @@ import { getApiErrorMessage } from '../api/client';
 import AppLayout from '../components/layout/AppLayout';
 import ChatWindow from '../components/chat/ChatWindow';
 import RoomList from '../components/rooms/RoomList';
+import RoomActions from '../components/rooms/RoomActions';
 import { MessageSquare } from 'lucide-react';
 
 export default function ChatPage() {
@@ -80,13 +81,16 @@ function MobileRoomListHeader() {
           <p className="text-xs text-green-500">Online</p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={logout}
-        className="text-xs font-medium text-gray-500 hover:text-red-500 dark:text-gray-400"
-      >
-        Logout
-      </button>
+      <div className="flex items-center gap-3">
+        <RoomActions currentUserId={user.id} compact />
+        <button
+          type="button"
+          onClick={logout}
+          className="text-xs font-medium text-gray-500 hover:text-red-500 dark:text-gray-400"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
