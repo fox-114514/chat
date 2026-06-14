@@ -10,3 +10,15 @@ CREATE TABLE IF NOT EXISTS files (
 );
 
 CREATE INDEX IF NOT EXISTS idx_files_uploader ON files(uploader_id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_messages_file'
+  ) THEN
+    ALTER TABLE messages
+      ADD CONSTRAINT fk_messages_file
+      FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE SET NULL;
+  END IF;
+END
+$$;

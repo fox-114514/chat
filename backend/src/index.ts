@@ -5,7 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 
 import { env } from './config/env';
 import { logger } from './utils/logger';
-import { AppError, InternalError } from './utils/errors';
+import { AppError, InternalError, NotFound } from './utils/errors';
 import { runMigrations } from './db/migrate';
 import { closePool } from './db/pool';
 
@@ -25,14 +25,8 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  next(new NotFoundError(`Route not found: ${req.method} ${req.path}`));
+  next(NotFound(`Route not found: ${req.method} ${req.path}`, 'NOT_FOUND'));
 });
-
-class NotFoundError extends AppError {
-  constructor(message: string) {
-    super(404, message, 'NOT_FOUND');
-  }
-}
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof AppError) {
@@ -41,9 +35,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     return;
   }
   logger.error({ err }, 'unhandled error');
-  const wrapped = err instanceof Error ? err : new Error(String(err));
   res.status(500).json({ error: InternalError().message, code: 'INTERNAL_ERROR' });
-  void wrapped;
 });
 
 const io = new SocketIOServer(httpServer, {
@@ -78,8 +70,15 @@ async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
   logger.info({ signal }, 'shutting down');
-  io.close();
-  httpServer.close();
+
+  await new Promise<void>((resolve) => {
+    io.close(() => resolve());
+  });
+
+  await new Promise<void>((resolve) => {
+    httpServer.close(() => resolve());
+  });
+
   try {
     await closePool();
   } catch (err) {
