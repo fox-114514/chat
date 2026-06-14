@@ -30,9 +30,10 @@ Thumbs.db
 *.swo
 
 # runtime / uploads
-storage/
+# `storage/` 根目录是代码模块 (backend/src/storage/),不能直接忽略
+# 只忽略其中的 uploads/ 子目录和项目根的 storage/uploads/
+storage/uploads/
 uploads/
-**/storage/
 **/uploads/
 
 # coverage
