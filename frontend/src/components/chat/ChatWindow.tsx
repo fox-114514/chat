@@ -10,7 +10,7 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import Avatar from '../common/Avatar';
-import { ArrowLeft, Phone, Video } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Room, Message } from '../../types/models';
 
 const DEFAULT_LIMIT = 20;
@@ -200,22 +200,6 @@ export default function ChatWindow() {
           </p>
         </div>
 
-        <div className="hidden items-center gap-1 sm:flex">
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-            aria-label="Voice call"
-          >
-            <Phone className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-            aria-label="Video call"
-          >
-            <Video className="h-5 w-5" />
-          </button>
-        </div>
       </div>
 
       {error && (
