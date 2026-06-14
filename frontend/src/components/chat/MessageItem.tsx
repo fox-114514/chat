@@ -49,7 +49,7 @@ export default function MessageItem({ message, isMe, showAvatar = true }: Messag
               <SecureImage
                 fileId={file.id}
                 alt={file.originalName}
-                className="max-h-64 min-h-[120px] w-auto min-w-[120px] rounded-xl"
+                className="max-h-[60vh] min-h-[120px] w-auto max-w-full rounded-xl object-contain"
               />
               {content && content !== file.originalName && (
                 <p className={`px-3 py-1.5 text-xs ${isMe ? 'text-blue-100' : 'text-gray-500'}`}>

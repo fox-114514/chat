@@ -60,12 +60,12 @@ export default function SecureImage({ fileId, alt, className = '' }: SecureImage
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className="relative">
       {objectUrl ? (
         <img
           src={objectUrl}
           alt={alt}
-          className="h-full w-full object-contain"
+          className={className}
           onLoad={() => setStatus('loading')}
           onError={() => setStatus('error')}
           loading="lazy"
