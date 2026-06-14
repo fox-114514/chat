@@ -253,7 +253,14 @@ private fun ChatInput(
     ) { uri: Uri? ->
         uri?.let {
             val mimeType = context.contentResolver.getType(uri) ?: "*/*"
-            val type = if (mimeType.startsWith("image/")) "image" else "file"
+            val extension = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    cursor.getString(nameIndex)?.substringAfterLast('.', "")?.lowercase() ?: ""
+                } else ""
+            } ?: ""
+            val imageExtensions = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg")
+            val type = if (mimeType.startsWith("image/") || imageExtensions.contains(extension)) "image" else "file"
             onFileSelected(uri, type)
         }
     }

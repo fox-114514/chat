@@ -90,7 +90,10 @@ export default function MessageInput({
       setUploading(true);
       try {
         const uploaded = await uploadFile(file);
-        const type: 'file' | 'image' = file.type.startsWith('image/') ? 'image' : 'file';
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+        const imageExts = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
+        const type: 'file' | 'image' =
+          file.type.startsWith('image/') || imageExts.has(ext) ? 'image' : 'file';
         onSendFile(
           {
             id: uploaded.id,
