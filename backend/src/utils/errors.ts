@@ -16,4 +16,5 @@ export const Unauthorized = (message = 'Unauthorized', code?: string) => new App
 export const Forbidden = (message = 'Forbidden', code?: string) => new AppError(403, message, code);
 export const NotFound = (message = 'Not found', code?: string) => new AppError(404, message, code);
 export const Conflict = (message: string, code?: string) => new AppError(409, message, code);
+export const PayloadTooLarge = (message: string, code?: string) => new AppError(413, message, code);
 export const InternalError = (message = 'Internal server error', code?: string) => new AppError(500, message, code);

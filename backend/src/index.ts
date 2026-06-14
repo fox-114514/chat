@@ -11,6 +11,7 @@ import authRouter from './routes/auth';
 import usersRouter from './routes/users';
 import roomsRouter from './routes/rooms';
 import directRouter from './routes/direct';
+import filesRouter from './routes/files';
 import { initSocket, closeSocket } from './socket/server';
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/rooms', roomsRouter);
 app.use('/api/direct', directRouter);
+app.use('/api/files', filesRouter);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(NotFound(`Route not found: ${req.method} ${req.path}`, 'NOT_FOUND'));
