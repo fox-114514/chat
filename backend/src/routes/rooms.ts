@@ -3,13 +3,8 @@ import { pool } from '../db/pool';
 import { requireAuth } from '../auth/middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequest, NotFound, Forbidden, Conflict } from '../utils/errors';
-import {
-  RoomRow,
-  RoomMemberRow,
-  RoomMember,
-  roomRowToDto,
-  groupMembersByRoom,
-} from '../types/models';
+import { RoomRow, roomRowToDto } from '../types/models';
+import { fetchRoomMembers, fetchRoomMembersBatch, requireMember } from '../db/rooms';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -49,39 +44,6 @@ function parseMemberIds(body: unknown, selfId: string): string[] {
   return unique;
 }
 
-async function fetchMembers(
-  roomIds: string[],
-): Promise<Map<string, RoomMember[]>> {
-  if (roomIds.length === 0) return new Map();
-  const result = await pool.query<RoomMemberRow>(
-    `SELECT rm.room_id, rm.user_id, rm.role, rm.joined_at, rm.last_read_at,
-            u.username, u.avatar_color
-     FROM room_members rm
-     JOIN users u ON u.id = rm.user_id
-     WHERE rm.room_id = ANY($1::uuid[])`,
-    [roomIds],
-  );
-  return groupMembersByRoom(result.rows);
-}
-
-async function fetchMembersForOneRoom(
-  roomId: string,
-): Promise<RoomMember[]> {
-  const map = await fetchMembers([roomId]);
-  return map.get(roomId) ?? [];
-}
-
-async function requireMembership(roomId: string, userId: string): Promise<string> {
-  const result = await pool.query<{ role: string }>(
-    `SELECT role FROM room_members WHERE room_id = $1 AND user_id = $2`,
-    [roomId, userId],
-  );
-  if (result.rows.length === 0) {
-    throw Forbidden('not a member of this room', 'NOT_MEMBER');
-  }
-  return result.rows[0]!.role;
-}
-
 router.get(
   '/',
   requireAuth,
@@ -106,7 +68,7 @@ router.get(
     );
 
     const roomIds = roomsResult.rows.map((r) => r.id);
-    const membersByRoom = await fetchMembers(roomIds);
+    const membersByRoom = await fetchRoomMembersBatch(pool, roomIds);
 
     const items = roomsResult.rows.map((row) =>
       roomRowToDto(row, membersByRoom.get(row.id) ?? [], row.unread_count),
@@ -152,7 +114,7 @@ router.post(
 
       await client.query('COMMIT');
 
-      const members = await fetchMembersForOneRoom(room.id);
+      const members = await fetchRoomMembers(pool, room.id);
       logger.info(
         { roomId: room.id, creatorId: req.user!.userId, memberCount: members.length },
         'room created',
@@ -174,7 +136,7 @@ router.get(
     const roomId = req.params.id;
     if (!roomId) throw BadRequest('room id required');
 
-    await requireMembership(roomId, req.user!.userId);
+    await requireMember(pool, roomId, req.user!.userId);
 
     const roomResult = await pool.query<RoomRow>(
       `SELECT id, name, is_direct, created_by, created_at
@@ -184,7 +146,7 @@ router.get(
     const room = roomResult.rows[0];
     if (!room) throw NotFound('room not found');
 
-    const members = await fetchMembersForOneRoom(room.id);
+    const members = await fetchRoomMembers(pool, room.id);
     res.json({ room: roomRowToDto(room, members) });
   }),
 );
@@ -201,7 +163,7 @@ router.post(
     }
     const newUserId = body.userId;
 
-    const callerRole = await requireMembership(roomId, req.user!.userId);
+    const callerRole = await requireMember(pool, roomId, req.user!.userId);
     if (callerRole !== 'admin') {
       throw Forbidden('only admins can add members', 'NOT_ADMIN');
     }
@@ -251,7 +213,7 @@ router.delete(
       );
     }
 
-    const callerRole = await requireMembership(roomId, req.user!.userId);
+    const callerRole = await requireMember(pool, roomId, req.user!.userId);
     if (callerRole !== 'admin') {
       throw Forbidden('only admins can remove members', 'NOT_ADMIN');
     }

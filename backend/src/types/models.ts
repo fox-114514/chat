@@ -62,7 +62,7 @@ export interface RoomRow {
   id: string;
   name: string | null;
   is_direct: boolean;
-  created_by: string | null;
+  created_by: string;
   created_at: Date;
 }
 
@@ -75,26 +75,26 @@ export interface Room {
   members: RoomMember[];
 }
 
-export interface RoomListItem {
-  id: string;
-  name: string | null;
-  isDirect: boolean;
-  createdBy: string;
-  createdAt: string;
-  members: RoomMember[];
+export interface RoomListItem extends Room {
   unreadCount: number;
 }
 
+export function roomRowToDto(row: RoomRow, members: RoomMember[]): Room;
+export function roomRowToDto(
+  row: RoomRow,
+  members: RoomMember[],
+  unreadCount: number,
+): RoomListItem;
 export function roomRowToDto(
   row: RoomRow,
   members: RoomMember[],
   unreadCount?: number,
 ): Room | RoomListItem {
-  const base = {
+  const base: Room = {
     id: row.id,
     name: row.name,
     isDirect: row.is_direct,
-    createdBy: row.created_by ?? '',
+    createdBy: row.created_by,
     createdAt: row.created_at.toISOString(),
     members,
   };

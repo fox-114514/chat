@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name            VARCHAR(100),
   is_direct       BOOLEAN DEFAULT FALSE,
-  created_by      UUID REFERENCES users(id),
+  created_by      UUID NOT NULL REFERENCES users(id),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 

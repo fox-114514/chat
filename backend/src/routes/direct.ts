@@ -3,30 +3,11 @@ import { pool } from '../db/pool';
 import { requireAuth } from '../auth/middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequest, NotFound } from '../utils/errors';
-import {
-  RoomRow,
-  RoomMemberRow,
-  RoomMember,
-  rowToRoomMember,
-  roomRowToDto,
-} from '../types/models';
+import { RoomRow, roomRowToDto } from '../types/models';
+import { fetchRoomMembers } from '../db/rooms';
 import { logger } from '../utils/logger';
 
 const router = Router();
-
-async function fetchMembersForRoom(
-  roomId: string,
-): Promise<RoomMember[]> {
-  const result = await pool.query<RoomMemberRow>(
-    `SELECT rm.user_id, rm.role, rm.joined_at, rm.last_read_at,
-            u.username, u.avatar_color
-     FROM room_members rm
-     JOIN users u ON u.id = rm.user_id
-     WHERE rm.room_id = $1`,
-    [roomId],
-  );
-  return result.rows.map(rowToRoomMember);
-}
 
 router.get(
   '/:userId',
@@ -61,7 +42,7 @@ router.get(
 
     if (existing.rows.length > 0) {
       const room = existing.rows[0]!;
-      const members = await fetchMembersForRoom(room.id);
+      const members = await fetchRoomMembers(pool, room.id);
       res.json({ room: roomRowToDto(room, members) });
       return;
     }
@@ -86,7 +67,7 @@ router.get(
 
       await client.query('COMMIT');
 
-      const members = await fetchMembersForRoom(room.id);
+      const members = await fetchRoomMembers(pool, room.id);
       logger.info(
         { roomId: room.id, selfId, otherUserId },
         'direct chat created',
